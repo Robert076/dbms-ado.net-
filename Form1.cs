@@ -75,32 +75,6 @@ namespace dbms
                 buttonX += buttonWidth + buttonSpacing;
             }
 
-            // Add Record button
-            if (addRecordButton != null)
-            {
-                addRecordButton.Size = new Size(buttonWidth, buttonHeight);
-                addRecordButton.Location = new Point(buttonX, 0);
-                buttonPanel.Controls.Add(addRecordButton);
-                buttonX += buttonWidth + buttonSpacing;
-            }
-
-            // Delete Selected Child Row button
-            if (deleteChildRowButton != null)
-            {
-                deleteChildRowButton.Size = new Size(buttonWidth, buttonHeight);
-                deleteChildRowButton.Location = new Point(buttonX, 0);
-                buttonPanel.Controls.Add(deleteChildRowButton);
-                buttonX += buttonWidth + buttonSpacing;
-            }
-
-            // Update Selected Row button
-            if (updateButton != null)
-            {
-                updateButton.Size = new Size(buttonWidth, buttonHeight);
-                updateButton.Location = new Point(buttonX, 0);
-                buttonPanel.Controls.Add(updateButton);
-            }
-
             // Create input panel below the buttons
             inputPanel = new Panel
             {
@@ -159,6 +133,36 @@ namespace dbms
                     yOffset += 30; // Move to next row
                 }
             }
+
+            // Add action buttons in a row
+            int buttonY = yOffset + 10;
+            Button addButton = new Button
+            {
+                Text = "Add",
+                Location = new Point(10, buttonY),
+                Size = new Size(60, 25)
+            };
+            addButton.Click += AddRecordButtonClick;
+
+            Button updateButton = new Button
+            {
+                Text = "Update",
+                Location = new Point(80, buttonY),
+                Size = new Size(60, 25)
+            };
+            updateButton.Click += UpdateButtonClick;
+
+            Button deleteButton = new Button
+            {
+                Text = "Delete",
+                Location = new Point(150, buttonY),
+                Size = new Size(60, 25)
+            };
+            deleteButton.Click += DeleteChildRowButtonClick;
+
+            inputPanel.Controls.Add(addButton);
+            inputPanel.Controls.Add(updateButton);
+            inputPanel.Controls.Add(deleteButton);
         }
 
         public void TestConnectionButtonClick(object sender, EventArgs e)
