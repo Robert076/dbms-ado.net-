@@ -3,6 +3,7 @@ using System;
 using System.Data;
 using System.Windows.Forms;
 using System.Configuration;
+using System.Drawing;
 
 namespace dbms
 {
@@ -14,6 +15,8 @@ namespace dbms
         private DataSet _categoriesDataSet = new DataSet();
         private DataSet _detailDataSet = new DataSet();
         private int? _selectedCategoryId = null;
+        private Panel inputPanel;
+        private Panel buttonPanel;
 
         public Form1()
         {
@@ -23,7 +26,7 @@ namespace dbms
                 _config = ConfigurationManager.GetConfiguration();
                 _connectionString = _config.ConnectionString;
                 this.Text = _config.FormCaption;
-                SetupInputFields();
+                SetupUI();
             }
             catch (Exception ex)
             {
@@ -32,16 +35,59 @@ namespace dbms
             }
         }
 
+        private void SetupUI()
+        {
+            // Create button panel at the top
+            buttonPanel = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 50,
+                Padding = new Padding(10)
+            };
+
+            // Create and add buttons to the panel
+            Button testConnectionButton = new Button
+            {
+                Text = "Test Connection",
+                Location = new Point(10, 10),
+                Width = 120
+            };
+            testConnectionButton.Click += TestConnectionButtonClick;
+
+            Button loadCategoriesButton = new Button
+            {
+                Text = "Load Categories",
+                Location = new Point(140, 10),
+                Width = 120
+            };
+            loadCategoriesButton.Click += LoadCategoriesButtonClick;
+
+            buttonPanel.Controls.Add(testConnectionButton);
+            buttonPanel.Controls.Add(loadCategoriesButton);
+            this.Controls.Add(buttonPanel);
+
+            // Create input panel
+            inputPanel = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 100,
+                Padding = new Padding(10)
+            };
+            this.Controls.Add(inputPanel);
+
+            // Setup input fields
+            SetupInputFields();
+
+            // Adjust DataGridViews
+            dataGridCategories.Dock = DockStyle.Top;
+            dataGridCategories.Height = 200;
+
+            dataGridSupplements.Dock = DockStyle.Fill;
+        }
+
         private void SetupInputFields()
         {
-            // Clear existing controls
-            foreach (Control control in this.Controls)
-            {
-                if (control is TextBox)
-                {
-                    control.Visible = false;
-                }
-            }
+            inputPanel.Controls.Clear();
 
             // Create input fields based on configuration
             int yOffset = 10;
@@ -50,21 +96,50 @@ namespace dbms
                 Label label = new Label
                 {
                     Text = column,
-                    Location = new System.Drawing.Point(10, yOffset),
+                    Location = new Point(10, yOffset),
                     AutoSize = true
                 };
-                this.Controls.Add(label);
+                inputPanel.Controls.Add(label);
 
                 TextBox textBox = new TextBox
                 {
                     Name = column + "TextBox",
-                    Location = new System.Drawing.Point(150, yOffset),
+                    Location = new Point(150, yOffset),
                     Width = 200
                 };
-                this.Controls.Add(textBox);
+                inputPanel.Controls.Add(textBox);
 
                 yOffset += 30;
             }
+
+            // Add action buttons
+            Button addButton = new Button
+            {
+                Text = "Add",
+                Location = new Point(10, yOffset),
+                Width = 80
+            };
+            addButton.Click += AddRecordButtonClick;
+
+            Button updateButton = new Button
+            {
+                Text = "Update",
+                Location = new Point(100, yOffset),
+                Width = 80
+            };
+            updateButton.Click += UpdateButtonClick;
+
+            Button deleteButton = new Button
+            {
+                Text = "Delete",
+                Location = new Point(190, yOffset),
+                Width = 80
+            };
+            deleteButton.Click += DeleteChildRowButtonClick;
+
+            inputPanel.Controls.Add(addButton);
+            inputPanel.Controls.Add(updateButton);
+            inputPanel.Controls.Add(deleteButton);
         }
 
         public void TestConnectionButtonClick(object sender, EventArgs e)
