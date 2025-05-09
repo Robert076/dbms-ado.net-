@@ -76,36 +76,30 @@ namespace dbms
             }
 
             // Add Record button
-            Button addButton = new Button
+            if (addRecordButton != null)
             {
-                Text = "Add",
-                Size = new Size(buttonWidth, buttonHeight),
-                Location = new Point(buttonX, 0)
-            };
-            addButton.Click += AddRecordButtonClick;
-            buttonPanel.Controls.Add(addButton);
-            buttonX += buttonWidth + buttonSpacing;
+                addRecordButton.Size = new Size(buttonWidth, buttonHeight);
+                addRecordButton.Location = new Point(buttonX, 0);
+                buttonPanel.Controls.Add(addRecordButton);
+                buttonX += buttonWidth + buttonSpacing;
+            }
 
-            // Update button
-            Button updateButton = new Button
+            // Delete Selected Child Row button
+            if (deleteChildRowButton != null)
             {
-                Text = "Update",
-                Size = new Size(buttonWidth, buttonHeight),
-                Location = new Point(buttonX, 0)
-            };
-            updateButton.Click += UpdateButtonClick;
-            buttonPanel.Controls.Add(updateButton);
-            buttonX += buttonWidth + buttonSpacing;
+                deleteChildRowButton.Size = new Size(buttonWidth, buttonHeight);
+                deleteChildRowButton.Location = new Point(buttonX, 0);
+                buttonPanel.Controls.Add(deleteChildRowButton);
+                buttonX += buttonWidth + buttonSpacing;
+            }
 
-            // Delete button
-            Button deleteButton = new Button
+            // Update Selected Row button
+            if (updateButton != null)
             {
-                Text = "Delete",
-                Size = new Size(buttonWidth, buttonHeight),
-                Location = new Point(buttonX, 0)
-            };
-            deleteButton.Click += DeleteChildRowButtonClick;
-            buttonPanel.Controls.Add(deleteButton);
+                updateButton.Size = new Size(buttonWidth, buttonHeight);
+                updateButton.Location = new Point(buttonX, 0);
+                buttonPanel.Controls.Add(updateButton);
+            }
 
             // Create input panel below the buttons
             inputPanel = new Panel
