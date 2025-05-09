@@ -36,18 +36,29 @@ namespace dbms
 
         private void SetupUI()
         {
-            // Remove the old buttons since we're using the designer ones
+            // Set form to start maximized
+            this.WindowState = FormWindowState.Maximized;
+
+            // Adjust the existing buttons
             if (testConnectionButton != null)
+            {
+                testConnectionButton.Size = new Size(100, 25);
+                testConnectionButton.Location = new Point(10, 10);
                 testConnectionButton.Click += TestConnectionButtonClick;
+            }
             if (loadCategoriesButton != null)
+            {
+                loadCategoriesButton.Size = new Size(100, 25);
+                loadCategoriesButton.Location = new Point(120, 10);
                 loadCategoriesButton.Click += LoadCategoriesButtonClick;
+            }
 
             // Create input panel below the existing buttons
             inputPanel = new Panel
             {
-                Location = new Point(10, 50), // Position below the existing buttons
+                Location = new Point(10, 45),
                 Width = this.ClientSize.Width - 20,
-                Height = 100,
+                Height = 80,
                 Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
             };
             this.Controls.Add(inputPanel);
@@ -58,7 +69,7 @@ namespace dbms
             // Adjust DataGridViews
             dataGridCategories.Location = new Point(10, inputPanel.Bottom + 10);
             dataGridCategories.Width = this.ClientSize.Width - 20;
-            dataGridCategories.Height = 200;
+            dataGridCategories.Height = (this.ClientSize.Height - inputPanel.Bottom - 20) / 2;
             dataGridCategories.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
 
             dataGridSupplements.Location = new Point(10, dataGridCategories.Bottom + 10);
@@ -72,13 +83,14 @@ namespace dbms
             inputPanel.Controls.Clear();
 
             // Create input fields based on configuration
-            int yOffset = 10;
+            int yOffset = 5;
+            int xOffset = 10;
             foreach (string column in _config.DetailTable.InputColumns)
             {
                 Label label = new Label
                 {
                     Text = column,
-                    Location = new Point(10, yOffset),
+                    Location = new Point(xOffset, yOffset + 3),
                     AutoSize = true
                 };
                 inputPanel.Controls.Add(label);
@@ -86,36 +98,43 @@ namespace dbms
                 TextBox textBox = new TextBox
                 {
                     Name = column + "TextBox",
-                    Location = new Point(150, yOffset),
-                    Width = 200
+                    Location = new Point(xOffset + 120, yOffset),
+                    Width = 150,
+                    Height = 20
                 };
                 inputPanel.Controls.Add(textBox);
 
-                yOffset += 30;
+                xOffset += 300; // Move to next column
+                if (xOffset > inputPanel.Width - 300) // If we're running out of space
+                {
+                    xOffset = 10; // Reset to first column
+                    yOffset += 30; // Move to next row
+                }
             }
 
-            // Add action buttons
+            // Add action buttons in a row
+            int buttonY = yOffset + 10;
             Button addButton = new Button
             {
                 Text = "Add",
-                Location = new Point(10, yOffset),
-                Width = 80
+                Location = new Point(10, buttonY),
+                Size = new Size(60, 25)
             };
             addButton.Click += AddRecordButtonClick;
 
             Button updateButton = new Button
             {
                 Text = "Update",
-                Location = new Point(100, yOffset),
-                Width = 80
+                Location = new Point(80, buttonY),
+                Size = new Size(60, 25)
             };
             updateButton.Click += UpdateButtonClick;
 
             Button deleteButton = new Button
             {
                 Text = "Delete",
-                Location = new Point(190, yOffset),
-                Width = 80
+                Location = new Point(150, buttonY),
+                Size = new Size(60, 25)
             };
             deleteButton.Click += DeleteChildRowButtonClick;
 
