@@ -16,7 +16,6 @@ namespace dbms
         private DataSet _detailDataSet = new DataSet();
         private int? _selectedCategoryId = null;
         private Panel inputPanel;
-        private Panel buttonPanel;
 
         public Form1()
         {
@@ -37,41 +36,19 @@ namespace dbms
 
         private void SetupUI()
         {
-            // Create button panel at the top
-            buttonPanel = new Panel
-            {
-                Dock = DockStyle.Top,
-                Height = 50,
-                Padding = new Padding(10)
-            };
+            // Remove the old buttons since we're using the designer ones
+            if (testConnectionButton != null)
+                testConnectionButton.Click += TestConnectionButtonClick;
+            if (loadCategoriesButton != null)
+                loadCategoriesButton.Click += LoadCategoriesButtonClick;
 
-            // Create and add buttons to the panel
-            Button testConnectionButton = new Button
-            {
-                Text = "Test Connection",
-                Location = new Point(10, 10),
-                Width = 120
-            };
-            testConnectionButton.Click += TestConnectionButtonClick;
-
-            Button loadCategoriesButton = new Button
-            {
-                Text = "Load Categories",
-                Location = new Point(140, 10),
-                Width = 120
-            };
-            loadCategoriesButton.Click += LoadCategoriesButtonClick;
-
-            buttonPanel.Controls.Add(testConnectionButton);
-            buttonPanel.Controls.Add(loadCategoriesButton);
-            this.Controls.Add(buttonPanel);
-
-            // Create input panel
+            // Create input panel below the existing buttons
             inputPanel = new Panel
             {
-                Dock = DockStyle.Top,
+                Location = new Point(10, 50), // Position below the existing buttons
+                Width = this.ClientSize.Width - 20,
                 Height = 100,
-                Padding = new Padding(10)
+                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
             };
             this.Controls.Add(inputPanel);
 
@@ -79,10 +56,15 @@ namespace dbms
             SetupInputFields();
 
             // Adjust DataGridViews
-            dataGridCategories.Dock = DockStyle.Top;
+            dataGridCategories.Location = new Point(10, inputPanel.Bottom + 10);
+            dataGridCategories.Width = this.ClientSize.Width - 20;
             dataGridCategories.Height = 200;
+            dataGridCategories.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
 
-            dataGridSupplements.Dock = DockStyle.Fill;
+            dataGridSupplements.Location = new Point(10, dataGridCategories.Bottom + 10);
+            dataGridSupplements.Width = this.ClientSize.Width - 20;
+            dataGridSupplements.Height = this.ClientSize.Height - dataGridSupplements.Top - 20;
+            dataGridSupplements.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom;
         }
 
         private void SetupInputFields()
