@@ -1,0 +1,20 @@
+{
+    "FormCaption": "Supplements Management System",
+    "ConnectionString": "Data Source=ASUS-PC\\SQLEXPRESS;Initial Catalog=Supplements;Integrated Security=True;Encrypt=False;TrustServerCertificate=True",
+    "MasterTable": {
+        "TableName": "Categories",
+        "DisplayName": "Categories",
+        "SelectQuery": "SELECT * FROM Categories",
+        "DisplayColumns": ["CategoryID", "CategoryName", "CategoryDescription"]
+    },
+    "DetailTable": {
+        "TableName": "Supplements",
+        "DisplayName": "Supplements",
+        "SelectQuery": "SELECT s.SupplementID, SupplementName, SupplementDescription, SupplierID, SupplementStock, SupplementPrice FROM Supplements s WHERE s.CategoryID = @CategoryID",
+        "InsertQuery": "INSERT INTO Supplements(SupplementName, SupplementDescription, SupplierId, SupplementStock, SupplementPrice, CategoryID) VALUES(@SupplementName, @SupplementDescription, @SupplierId, @SupplementStock, @SupplementPrice, @CategoryID)",
+        "UpdateQuery": "UPDATE Supplements SET SupplementName = @SupplementName, SupplementDescription = @SupplementDescription, SupplementStock = @SupplementStock, SupplementPrice = @SupplementPrice WHERE SupplementID = @SupplementID",
+        "DeleteQuery": "DELETE FROM Supplements WHERE SupplementID = @SupplementID",
+        "DisplayColumns": ["SupplementID", "SupplementName", "SupplementDescription", "SupplierID", "SupplementStock", "SupplementPrice"],
+        "InputColumns": ["SupplementName", "SupplementDescription", "SupplierId", "SupplementStock", "SupplementPrice"]
+    }
+} 

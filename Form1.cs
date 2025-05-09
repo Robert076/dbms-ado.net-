@@ -2,22 +2,167 @@ using Microsoft.Data.SqlClient;
 using System;
 using System.Data;
 using System.Windows.Forms;
+using System.Configuration;
+using System.Drawing;
 
 namespace dbms
 {
     public partial class Form1 : Form
     {
-        string connectionString = @"Data Source=ASUS-PC\SQLEXPRESS;Initial Catalog=Supplements;Integrated Security=True;Encrypt=False;TrustServerCertificate=True";
-        SqlDataAdapter categoriesAdapter, supplementsAdapter;
-        DataSet categoriesDataSet = new DataSet();
-        DataSet supplementsDataSet = new DataSet();
-
-        int? selectedCategoryId = null;
-
+        private FormConfiguration _config;
+        private string _connectionString;
+        private SqlDataAdapter _categoriesAdapter, _detailAdapter;
+        private DataSet _categoriesDataSet = new DataSet();
+        private DataSet _detailDataSet = new DataSet();
+        private int? _selectedCategoryId = null;
+        private Panel inputPanel;
 
         public Form1()
         {
             InitializeComponent();
+            try
+            {
+                _config = ConfigurationManager.GetConfiguration();
+                _connectionString = _config.ConnectionString;
+                this.Text = _config.FormCaption;
+                SetupUI();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading configuration: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Application.Exit();
+            }
+        }
+
+        private void SetupUI()
+        {
+            // Set form to start maximized
+            this.WindowState = FormWindowState.Maximized;
+
+            // Create a panel for all buttons
+            Panel buttonPanel = new Panel
+            {
+                Location = new Point(10, 10),
+                Height = 30,
+                Width = this.ClientSize.Width - 20,
+                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
+            };
+            this.Controls.Add(buttonPanel);
+
+            // Add all buttons to the panel
+            int buttonX = 0;
+            int buttonWidth = 100;
+            int buttonHeight = 25;
+            int buttonSpacing = 10;
+
+            // Test Connection button
+            if (testConnectionButton != null)
+            {
+                testConnectionButton.Size = new Size(buttonWidth, buttonHeight);
+                testConnectionButton.Location = new Point(buttonX, 0);
+                testConnectionButton.Click += TestConnectionButtonClick;
+                buttonPanel.Controls.Add(testConnectionButton);
+                buttonX += buttonWidth + buttonSpacing;
+            }
+
+            // Load Categories button
+            if (loadCategoriesButton != null)
+            {
+                loadCategoriesButton.Size = new Size(buttonWidth, buttonHeight);
+                loadCategoriesButton.Location = new Point(buttonX, 0);
+                loadCategoriesButton.Click += LoadCategoriesButtonClick;
+                buttonPanel.Controls.Add(loadCategoriesButton);
+                buttonX += buttonWidth + buttonSpacing;
+            }
+
+            // Create input panel below the buttons
+            inputPanel = new Panel
+            {
+                Location = new Point(10, buttonPanel.Bottom + 10),
+                Width = this.ClientSize.Width - 20,
+                Height = 80,
+                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
+            };
+            this.Controls.Add(inputPanel);
+
+            // Setup input fields
+            SetupInputFields();
+
+            // Adjust DataGridViews
+            dataGridCategories.Location = new Point(10, inputPanel.Bottom + 10);
+            dataGridCategories.Width = this.ClientSize.Width - 20;
+            dataGridCategories.Height = (this.ClientSize.Height - inputPanel.Bottom - 20) / 2;
+            dataGridCategories.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+
+            dataGridSupplements.Location = new Point(10, dataGridCategories.Bottom + 10);
+            dataGridSupplements.Width = this.ClientSize.Width - 20;
+            dataGridSupplements.Height = this.ClientSize.Height - dataGridSupplements.Top - 20;
+            dataGridSupplements.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom;
+        }
+
+        private void SetupInputFields()
+        {
+            inputPanel.Controls.Clear();
+
+            // Create input fields based on configuration
+            int yOffset = 5;
+            int xOffset = 10;
+            foreach (string column in _config.DetailTable.InputColumns)
+            {
+                Label label = new Label
+                {
+                    Text = column,
+                    Location = new Point(xOffset, yOffset + 3),
+                    AutoSize = true
+                };
+                inputPanel.Controls.Add(label);
+
+                TextBox textBox = new TextBox
+                {
+                    Name = column + "TextBox",
+                    Location = new Point(xOffset + 120, yOffset),
+                    Width = 150,
+                    Height = 20
+                };
+                inputPanel.Controls.Add(textBox);
+
+                xOffset += 300; // Move to next column
+                if (xOffset > inputPanel.Width - 300) // If we're running out of space
+                {
+                    xOffset = 10; // Reset to first column
+                    yOffset += 30; // Move to next row
+                }
+            }
+
+            // Add action buttons in a row
+            int buttonY = yOffset + 10;
+            Button addButton = new Button
+            {
+                Text = "Add",
+                Location = new Point(10, buttonY),
+                Size = new Size(60, 25)
+            };
+            addButton.Click += AddRecordButtonClick;
+
+            Button updateButton = new Button
+            {
+                Text = "Update",
+                Location = new Point(80, buttonY),
+                Size = new Size(60, 25)
+            };
+            updateButton.Click += UpdateButtonClick;
+
+            Button deleteButton = new Button
+            {
+                Text = "Delete",
+                Location = new Point(150, buttonY),
+                Size = new Size(60, 25)
+            };
+            deleteButton.Click += DeleteChildRowButtonClick;
+
+            inputPanel.Controls.Add(addButton);
+            inputPanel.Controls.Add(updateButton);
+            inputPanel.Controls.Add(deleteButton);
         }
 
         public void TestConnectionButtonClick(object sender, EventArgs e)
@@ -29,7 +174,7 @@ namespace dbms
         {
             try
             {
-                using (SqlConnection connection = new SqlConnection(connectionString))
+                using (SqlConnection connection = new SqlConnection(_connectionString))
                 {
                     connection.Open();
                     MessageBox.Show("Test connection succeeded.", "Message", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -48,37 +193,37 @@ namespace dbms
 
         private void LoadAllCategories()
         {
-            using (SqlConnection connection = new SqlConnection(connectionString))
+            using (SqlConnection connection = new SqlConnection(_connectionString))
             {
                 connection.Open();
-                SqlCommand cmd = new SqlCommand("SELECT * FROM Categories", connection);
+                SqlCommand cmd = new SqlCommand(_config.MasterTable.SelectQuery, connection);
 
-                categoriesAdapter = new SqlDataAdapter(cmd);
-                categoriesDataSet.Clear();
+                _categoriesAdapter = new SqlDataAdapter(cmd);
+                _categoriesDataSet.Clear();
 
-                categoriesAdapter.Fill(categoriesDataSet, "Categories");
-                dataGridCategories.DataSource = categoriesDataSet.Tables["Categories"];
+                _categoriesAdapter.Fill(_categoriesDataSet, _config.MasterTable.TableName);
+                dataGridCategories.DataSource = _categoriesDataSet.Tables[_config.MasterTable.TableName];
                 connection.Close();
             }
         }
 
-        private void LoadSupplementsBySelectedCategoryId()
+        private void LoadDetailBySelectedCategoryId()
         {
-            using (SqlConnection connection = new SqlConnection(connectionString))
+            using (SqlConnection connection = new SqlConnection(_connectionString))
             {
-                if (this.selectedCategoryId == null || this.selectedCategoryId == -1)
+                if (this._selectedCategoryId == null || this._selectedCategoryId == -1)
                 {
                     MessageBox.Show("Please select a category first.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
 
-                SqlCommand cmd = new SqlCommand("SELECT s.SupplementID, SupplementName, SupplementDescription, SupplierID, SupplementStock, SupplementPrice FROM Supplements s WHERE s.CategoryID = @CategoryID", connection);
-                cmd.Parameters.AddWithValue("@CategoryID", this.selectedCategoryId);
+                SqlCommand cmd = new SqlCommand(_config.DetailTable.SelectQuery, connection);
+                cmd.Parameters.AddWithValue("@CategoryID", this._selectedCategoryId);
 
-                supplementsAdapter = new SqlDataAdapter(cmd);
-                supplementsDataSet.Clear();
-                supplementsAdapter.Fill(supplementsDataSet, "Supplements");
-                dataGridSupplements.DataSource = supplementsDataSet.Tables["Supplements"];
+                _detailAdapter = new SqlDataAdapter(cmd);
+                _detailDataSet.Clear();
+                _detailAdapter.Fill(_detailDataSet, _config.DetailTable.TableName);
+                dataGridSupplements.DataSource = _detailDataSet.Tables[_config.DetailTable.TableName];
                 connection.Close();
             }
         }
@@ -87,37 +232,41 @@ namespace dbms
         {
             if (dataGridCategories.CurrentRow != null)
             {
-                this.selectedCategoryId = Convert.ToInt32(dataGridCategories.CurrentRow.Cells["CategoryID"].Value);
-                LoadSupplementsBySelectedCategoryId();
+                this._selectedCategoryId = Convert.ToInt32(dataGridCategories.CurrentRow.Cells["CategoryID"].Value);
+                LoadDetailBySelectedCategoryId();
             }
         }
 
         private void AddRecordButtonClick(object sender, EventArgs e)
         {
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            using (SqlConnection conn = new SqlConnection(_connectionString))
             {
-                if (this.selectedCategoryId == -1 || this.selectedCategoryId == null)
+                if (this._selectedCategoryId == -1 || this._selectedCategoryId == null)
                 {
-                    MessageBox.Show("Please select a category in order to add a supplement first.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show($"Please select a category in order to add a {_config.DetailTable.DisplayName.ToLower()} first.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
 
-                string supplementName = supplementNameTextBox.Text;
-                string supplementDescription = supplementDescriptionTextBox.Text;
-
-                SqlCommand command = new SqlCommand("INSERT INTO Supplements(SupplementName, SupplementDescription, SupplierId, SupplementStock, SupplementPrice, CategoryID) VALUES(@SupplementName, @SupplementDescription, @SupplierId, @SupplementStock, @SupplementPrice, @CategoryID )", conn);
-                if (supplementName == "" || supplementDescription == "")
+                // Validate all required fields
+                foreach (string column in _config.DetailTable.InputColumns)
                 {
-                    MessageBox.Show("Please fill all the fields.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
+                    TextBox textBox = this.Controls.Find(column + "TextBox", true)[0] as TextBox;
+                    if (string.IsNullOrWhiteSpace(textBox.Text))
+                    {
+                        MessageBox.Show("Please fill all the fields.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
                 }
 
-                command.Parameters.AddWithValue("@SupplementName", supplementName);
-                command.Parameters.AddWithValue("@SupplementDescription", supplementDescription);
-                command.Parameters.AddWithValue("@SupplierId", 2);
-                command.Parameters.AddWithValue("@SupplementStock", 100);
-                command.Parameters.AddWithValue("@SupplementPrice", 24.22);
-                command.Parameters.AddWithValue("@CategoryID", this.selectedCategoryId);
+                SqlCommand command = new SqlCommand(_config.DetailTable.InsertQuery, conn);
+                
+                // Add parameters based on configuration
+                foreach (string column in _config.DetailTable.InputColumns)
+                {
+                    TextBox textBox = this.Controls.Find(column + "TextBox", true)[0] as TextBox;
+                    command.Parameters.AddWithValue("@" + column, textBox.Text);
+                }
+                command.Parameters.AddWithValue("@CategoryID", this._selectedCategoryId);
 
                 conn.Open();
 
@@ -134,28 +283,33 @@ namespace dbms
                 {
                     conn.Close();
                 }
-                MessageBox.Show("Supplement added successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show($"{_config.DetailTable.DisplayName} added successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
-            supplementNameTextBox.Clear();
-            supplementDescriptionTextBox.Clear();
-            LoadSupplementsBySelectedCategoryId();
+
+            // Clear input fields
+            foreach (string column in _config.DetailTable.InputColumns)
+            {
+                TextBox textBox = this.Controls.Find(column + "TextBox", true)[0] as TextBox;
+                textBox.Clear();
+            }
+            LoadDetailBySelectedCategoryId();
         }
 
         private void DeleteChildRowButtonClick(object sender, EventArgs e)
         {
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            using (SqlConnection conn = new SqlConnection(_connectionString))
             {
                 if (dataGridSupplements.SelectedRows.Count > 0)
                 {
-                    // Ask for confirmation before deleting
-                    DialogResult result = MessageBox.Show("Are you sure you want to delete this supplement?",
+                    DialogResult result = MessageBox.Show($"Are you sure you want to delete this {_config.DetailTable.DisplayName.ToLower()}?",
                         "Confirmation", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
 
                     if (result == DialogResult.Yes)
                     {
-                        int supplementId = Convert.ToInt32(dataGridSupplements.SelectedRows[0].Cells["SupplementID"].Value);
-                        SqlCommand cmd = new SqlCommand("DELETE FROM Supplements WHERE SupplementID = @SupplementID", conn);
-                        cmd.Parameters.AddWithValue("@SupplementID", supplementId);
+                        string idColumn = _config.DetailTable.DisplayColumns[0]; // Assuming first column is ID
+                        int detailId = Convert.ToInt32(dataGridSupplements.SelectedRows[0].Cells[idColumn].Value);
+                        SqlCommand cmd = new SqlCommand(_config.DetailTable.DeleteQuery, conn);
+                        cmd.Parameters.AddWithValue("@" + idColumn, detailId);
                         try
                         {
                             conn.Open();
@@ -170,37 +324,35 @@ namespace dbms
                         {
                             conn.Close();
                         }
-                        MessageBox.Show("Supplement deleted successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    }
-                    else
-                    {
-                        MessageBox.Show("Please select a supplement to delete.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        MessageBox.Show($"{_config.DetailTable.DisplayName} deleted successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                 }
-                LoadSupplementsBySelectedCategoryId();
+                else
+                {
+                    MessageBox.Show($"Please select a {_config.DetailTable.DisplayName.ToLower()} to delete.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                LoadDetailBySelectedCategoryId();
             }
         }
 
         private void UpdateButtonClick(object sender, EventArgs e)
         {
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            using (SqlConnection conn = new SqlConnection(_connectionString))
             {
                 if (dataGridSupplements.SelectedRows.Count > 0)
                 {
-                    int supplementId = Convert.ToInt32(dataGridSupplements.SelectedRows[0].Cells["SupplementID"].Value);
+                    string idColumn = _config.DetailTable.DisplayColumns[0]; // Assuming first column is ID
+                    int detailId = Convert.ToInt32(dataGridSupplements.SelectedRows[0].Cells[idColumn].Value);
 
-                    string supplementName = dataGridSupplements.SelectedRows[0].Cells["SupplementName"].Value.ToString();
-                    string supplementDescription = dataGridSupplements.SelectedRows[0].Cells["SupplementDescription"].Value.ToString();
-                    Int32 supplementStock = Convert.ToInt32(dataGridSupplements.SelectedRows[0].Cells["SupplementStock"].Value);
-                    Int32 supplementPrice = Convert.ToInt32(dataGridSupplements.SelectedRows[0].Cells["SupplementPrice"].Value);
+                    SqlCommand command = new SqlCommand(_config.DetailTable.UpdateQuery, conn);
 
-                    SqlCommand command = new SqlCommand("UPDATE Supplements SET SupplementName = @SupplementName, SupplementDescription = @SupplementDescription, SupplementStock = @SupplementStock, SupplementPrice = @SupplementPrice WHERE SupplementID = @SupplementID", conn);
-
-                    command.Parameters.AddWithValue("@SupplementName", supplementName);
-                    command.Parameters.AddWithValue("@SupplementDescription", supplementDescription);
-                    command.Parameters.AddWithValue("@SupplementStock", supplementStock);
-                    command.Parameters.AddWithValue("@SupplementPrice", supplementPrice);
-                    command.Parameters.AddWithValue("@SupplementID", supplementId);
+                    // Add parameters based on configuration
+                    foreach (string column in _config.DetailTable.InputColumns)
+                    {
+                        string value = dataGridSupplements.SelectedRows[0].Cells[column].Value.ToString();
+                        command.Parameters.AddWithValue("@" + column, value);
+                    }
+                    command.Parameters.AddWithValue("@" + idColumn, detailId);
 
                     conn.Open();
                     int rowsAffected = 0;
@@ -220,7 +372,7 @@ namespace dbms
                     }
                     if (rowsAffected > 0)
                     {
-                        MessageBox.Show("Supplement updated successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        MessageBox.Show($"{_config.DetailTable.DisplayName} updated successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                     else
                     {
@@ -229,7 +381,7 @@ namespace dbms
                 }
                 else
                 {
-                    MessageBox.Show("Please select a supplement to update.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show($"Please select a {_config.DetailTable.DisplayName.ToLower()} to update.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
             }
         }

@@ -1,0 +1,20 @@
+{
+    "FormCaption": "Category Tags Management System",
+    "ConnectionString": "Data Source=ASUS-PC\\SQLEXPRESS;Initial Catalog=Supplements;Integrated Security=True;Encrypt=False;TrustServerCertificate=True",
+    "MasterTable": {
+        "TableName": "Categories",
+        "DisplayName": "Categories",
+        "SelectQuery": "SELECT * FROM Categories",
+        "DisplayColumns": ["CategoryID", "CategoryName", "CategoryDescription"]
+    },
+    "DetailTable": {
+        "TableName": "CategoryTags",
+        "DisplayName": "Category Tags",
+        "SelectQuery": "SELECT TagID, CategoryID, TagName FROM CategoryTags WHERE CategoryID = @CategoryID",
+        "InsertQuery": "INSERT INTO CategoryTags(CategoryID, TagName) VALUES(@CategoryID, @TagName)",
+        "UpdateQuery": "UPDATE CategoryTags SET TagName = @TagName WHERE TagID = @TagID",
+        "DeleteQuery": "DELETE FROM CategoryTags WHERE TagID = @TagID",
+        "DisplayColumns": ["TagID", "CategoryID", "TagName"],
+        "InputColumns": ["TagName"]
+    }
+} 
