@@ -39,24 +39,78 @@ namespace dbms
             // Set form to start maximized
             this.WindowState = FormWindowState.Maximized;
 
-            // Adjust the existing buttons
+            // Create a panel for all buttons
+            Panel buttonPanel = new Panel
+            {
+                Location = new Point(10, 10),
+                Height = 30,
+                Width = this.ClientSize.Width - 20,
+                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
+            };
+            this.Controls.Add(buttonPanel);
+
+            // Add all buttons to the panel
+            int buttonX = 0;
+            int buttonWidth = 100;
+            int buttonHeight = 25;
+            int buttonSpacing = 10;
+
+            // Test Connection button
             if (testConnectionButton != null)
             {
-                testConnectionButton.Size = new Size(100, 25);
-                testConnectionButton.Location = new Point(10, 10);
+                testConnectionButton.Size = new Size(buttonWidth, buttonHeight);
+                testConnectionButton.Location = new Point(buttonX, 0);
                 testConnectionButton.Click += TestConnectionButtonClick;
-            }
-            if (loadCategoriesButton != null)
-            {
-                loadCategoriesButton.Size = new Size(100, 25);
-                loadCategoriesButton.Location = new Point(120, 10);
-                loadCategoriesButton.Click += LoadCategoriesButtonClick;
+                buttonPanel.Controls.Add(testConnectionButton);
+                buttonX += buttonWidth + buttonSpacing;
             }
 
-            // Create input panel below the existing buttons
+            // Load Categories button
+            if (loadCategoriesButton != null)
+            {
+                loadCategoriesButton.Size = new Size(buttonWidth, buttonHeight);
+                loadCategoriesButton.Location = new Point(buttonX, 0);
+                loadCategoriesButton.Click += LoadCategoriesButtonClick;
+                buttonPanel.Controls.Add(loadCategoriesButton);
+                buttonX += buttonWidth + buttonSpacing;
+            }
+
+            // Add Record button
+            Button addButton = new Button
+            {
+                Text = "Add",
+                Size = new Size(buttonWidth, buttonHeight),
+                Location = new Point(buttonX, 0)
+            };
+            addButton.Click += AddRecordButtonClick;
+            buttonPanel.Controls.Add(addButton);
+            buttonX += buttonWidth + buttonSpacing;
+
+            // Update button
+            Button updateButton = new Button
+            {
+                Text = "Update",
+                Size = new Size(buttonWidth, buttonHeight),
+                Location = new Point(buttonX, 0)
+            };
+            updateButton.Click += UpdateButtonClick;
+            buttonPanel.Controls.Add(updateButton);
+            buttonX += buttonWidth + buttonSpacing;
+
+            // Delete button
+            Button deleteButton = new Button
+            {
+                Text = "Delete",
+                Size = new Size(buttonWidth, buttonHeight),
+                Location = new Point(buttonX, 0)
+            };
+            deleteButton.Click += DeleteChildRowButtonClick;
+            buttonPanel.Controls.Add(deleteButton);
+
+            // Create input panel below the buttons
             inputPanel = new Panel
             {
-                Location = new Point(10, 45),
+                Location = new Point(10, buttonPanel.Bottom + 10),
                 Width = this.ClientSize.Width - 20,
                 Height = 80,
                 Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
@@ -111,36 +165,6 @@ namespace dbms
                     yOffset += 30; // Move to next row
                 }
             }
-
-            // Add action buttons in a row
-            int buttonY = yOffset + 10;
-            Button addButton = new Button
-            {
-                Text = "Add",
-                Location = new Point(10, buttonY),
-                Size = new Size(60, 25)
-            };
-            addButton.Click += AddRecordButtonClick;
-
-            Button updateButton = new Button
-            {
-                Text = "Update",
-                Location = new Point(80, buttonY),
-                Size = new Size(60, 25)
-            };
-            updateButton.Click += UpdateButtonClick;
-
-            Button deleteButton = new Button
-            {
-                Text = "Delete",
-                Location = new Point(150, buttonY),
-                Size = new Size(60, 25)
-            };
-            deleteButton.Click += DeleteChildRowButtonClick;
-
-            inputPanel.Controls.Add(addButton);
-            inputPanel.Controls.Add(updateButton);
-            inputPanel.Controls.Add(deleteButton);
         }
 
         public void TestConnectionButtonClick(object sender, EventArgs e)
