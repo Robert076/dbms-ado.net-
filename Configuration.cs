@@ -33,7 +33,7 @@ namespace dbms
         {
             if (_config == null)
             {
-                string configPath = ConfigurationManager.AppSettings["ConfigFilePath"];
+                string configPath = System.Configuration.ConfigurationManager.AppSettings["ConfigFilePath"];
                 if (File.Exists(configPath))
                 {
                     string json = File.ReadAllText(configPath);
